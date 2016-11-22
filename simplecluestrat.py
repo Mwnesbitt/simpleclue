@@ -28,20 +28,32 @@ def dontBeDumb(cleanedhistory):
   
   return [[0,0],[1,0],[2,1]]
 
-def cleanMasterHistory(playernumber, masterhistory):
+def cleanMasterHistory(playernumber, masterhistoryobject):
   #needs to mask everything that playernumber should not have been able to see, censor it for that player
-  cleanedhistory=masterhistory[:]
+  cleanedhistory=masterhistoryobject[:]
+  print(masterhistoryobject)
   x="x"
   cleanedhistory[0]=[[x,x],[x,x],[x,x]]
-  allplayerscards=masterhistory[1]  
+  allplayerscards=cleanedhistory[1]  
   cleanedhistory[1]=allplayerscards[playernumber]  #this needs to be changed to put x's in for other players cards to maintain data structure
-  turnhistory=masterhistory[2]
+  turnhistory=cleanedhistory[2]
   for turn in turnhistory:
-    if(turn[0] != playernumber):
+    junk= turn[2]
+    tempjunk = junk[:]
+    #print(turn[0]%3)
+    #print(playernumber)
+    #print(turn[0]%3 == playernumber)
+    #print(tempjunk[0])
+    #print(playernumber)
+    #print((tempjunk[0] == playernumber))
+    #print((turn[0]%3 == playernumber) | (tempjunk[0] == playernumber))
+    if((turn[0]%3 != playernumber) & (tempjunk[0] != playernumber)):
+      #print("yup")
       response = turn[2]
       response[1]=[x,x]
-      turn[2]=response
-  cleanedhistory[2]=turnhistory
+      turn[2]=response[:]
+  cleanedhistory[2]=turnhistory #I don't think I need this line since these two objects have the same memory location
+  print(masterhistoryobject)
   return cleanedhistory
   
 def evaluateGuess(playernumber, guess, masterhistory):
@@ -64,13 +76,13 @@ def evaluateGuess(playernumber, guess, masterhistory):
   #return [1, [0, 0]]
 
 def inputGuess():
-  character = int(input("What character number?"))
-  weapon = int(input("What weapon number?"))
-  room = int(input("What room number?"))
+  character = int(input("What character number was guessed?"))
+  weapon = int(input("What weapon number was guessed?"))
+  room = int(input("What room number was guessed?"))
   return [[0,character],[1,weapon], [2, room]]
   
 def inputGuessResponse():
-  tempjunk= input("Enter the player number that responded to the guess:")
+  tempjunk= input("Enter the player number that responded to the guess (leave blank if no one responded):")
   if(tempjunk is ""):
     playernumber = "x"
   else:
@@ -80,7 +92,7 @@ def inputGuessResponse():
     card0 = int(tempjunk)
   else:
     card0 = "x"
-  tempjunk = input("Enter 0 through n for which character/weapon/room it was (leave blank if you don't know):")
+  tempjunk = input("Enter 0 through n for which character/weapon/room it was (leave blank if you don't know):") #this isn't necessary-- it should look at the guess and if we know that the character card was replied with, we know the character as well since it was in the guess.
   if(tempjunk):
     card1 = int(tempjunk)
   else:

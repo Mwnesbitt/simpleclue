@@ -8,22 +8,30 @@ def runGame(gameStyle, list):
   n = 0
   gameOver = False
   while not gameOver:
-    tempjunk = input("Enter the player number:")
+    tempjunk = input("Enter the number of the player whose turn it is.  You are player 0, the player to your left is player 1.")
     if(tempjunk is "x"):
       break
     if(int(tempjunk)>n):
       n=int(tempjunk)
     cleanedhistory = simplecluestrat.cleanMasterHistory(n%3,masterhistory) #for player n, hide all the things that player n would not have seen
     if(gameStyle ==1):
-      guess = simplecluestrat.inputGuess()
-      guessresponse = simplecluestrat.inputGuessResponse()
+      if(n%3==0):
+        guess = simplecluestrat.dontBeDumb(cleanedhistory)
+        print(guess)
+        guessresponse = simplecluestrat.inputGuessResponse()
+      else:
+        guess = simplecluestrat.inputGuess()
+        guessresponse=simplecluestrat.inputGuessResponse()
+      print(guess)
     else:
       guess = simplecluestrat.dontBeDumb(cleanedhistory) #player n makes a guess based on his/her strategy, currently hardcoded to dontBeDumb.  Should make this a param.
       guessresponse = simplecluestrat.evaluateGuess(n, guess, masterhistory) #the player and the card that respond to the guess
-    masterhistory[2].append([n,guess,guessresponse]) #update master history with that information
-    n=n+1
     print(guessresponse)
-    print(guessresponse == ['x',['x','x']])
+    masterhistory[2].append([n%3,guess,guessresponse]) #update master history with that information
+    print(masterhistory)
+    n=n+1%3
+    #print(guessresponse)
+    #print(guessresponse == ['x',['x','x']])
     if(guessresponse == ['x',['x','x']]):
       gameOver=True
   for item in masterhistory:
@@ -45,7 +53,7 @@ def main():
   player0 = [[0,1],[1,1],[2,1]]
   player1 = [[0,1],[1,1],[2,2]]
   player2 = [[0,1],[1,1],[2,2]]
-  gameStyle = int(input("1 for manual, 2 for computer-run:")) #Note: not planning on building out option #2.  The bones are all there to do it, though.
+  gameStyle = 1 #int(input("1 for manual, 2 for computer-run:")) #Note: not planning on building out option #2.  The bones are all there to do it, though.
   if(gameStyle==1):
     x="x"
     answer=[[x,x],[x,x],[x,x]]
