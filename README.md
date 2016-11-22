@@ -1,3 +1,5 @@
+THIS PROJECT IS ON HOLD UNTIL I COMPLETE MORE PYTHON TUTORIALS.
+
 The goal of this project is similar to that of the mastermind project.  I want to simulate the game clue.
 
 For this project, however, I do not already have a good Clue strategy.  I played recently with friends and 
