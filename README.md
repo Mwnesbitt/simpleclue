@@ -18,6 +18,34 @@ Clue is more complicated than mastermind and keeping track of the game state wil
 data structures go.  We'll see how it goes.
 
 
+
+Notes on the current state 12/5
+These notes wereinspired by reading the https://learnpythonthehardway.org/book/ex43.html  Jotting down some really rough notes—will return to this later to clean them up. 
+
+A turn is an class that handles most of the activity.  Turns must have an index. 
+A game is an class with a method play() that has a while loop that keeps iterating through turns.   Before starting a game though it has to know the number of players and I guess it also has to set the scene cards (How do you play if you want to use this file to actually play in real life where shuffling is what actually decides the scene.)
+Is a card an object?  Or should they just be variables in a game?   (I think yes, because those are constant throughout the game.  We don’t need to create them at will).  Do lists: suspects, weapons, rooms.  
+What about a scene?  Should that be an object?  (I think yes, because they need to be constantly created)  have a scene.accuse() The game object will check that this method does not return “correct” as a result.  If not correct, it returns the person and possibly the card used to disprove it.   NOW I THINK NO—the accusation can just be a variable in a turn.  
+
+What about players and strategies?  (Players may not be necessary.  The turn should handle that—it just says “What was the guess?”  As for strategies, for now I think there just needs to be a way to type in that it’s all manual and worry about how to automate a game a little later.
+
+So it starts by:
+Instantiate a game.  The Game class has the cards (suspects, weapons, rooms) defined as global variables. The __init__ function of the game asks for the number of players.  Make a comment that this can also ask for whether the players are manual or employing a strategy.  When non-all-manual is implemented, (command line param or asked by the init function?), the init function will also ask about the strategies being employed and will also randomly select an element from each of the suspects, weapons, and rooms lists to create the scene.  The init function also records the players names and asks who goes first as variables in the game.  There’s also a counter in the game that keeps track of state by having a counter variable.
+Then game.play() is called.  The play() function looks at the counter variable which counts the turns starting from 0.  Has a while loop that increments the turn at the end.  A Turn class gets instantiated.  The Turn class can be stored in variable “turn_”+counter .  The turn class __init__ first checks to see whether the turn is being skipped.  Then it has self.accusation variable that gets set equal to 3 cards.  (in non 100% manual versions this can be done by a strategy.  How does the strategy keep track of the state of the game?  It has to review all previous turns, right?  So turns need to be available to strategies somehow)   There also needs to be an ruling (accusation_ruling, result?) or some variable that says the player that responded to the accusation and the card they used?  (Need to think about global knowledge of the state of the game versus local knowledge.  How do you juggle these?)   Turn needs a “set_accusation()” function that modifies the accusation variable (will always be manually entered) and a “set_ruling()” function that is either set manually or can be set automatically in automatically run games.
+So this gives us a situation where all the turns keep stacking up with predictable names that should be easy to iterate through.  Actually they should probably be stored in a list of “turns” and that way their index is their turn number. 
+Game needs to have a variable with the actual scene stored in automatic games.  In manual games this variable is set to null or ignored
+Game needs to have a variable that stores the player’s actual cards.  This gets entered in for manual games but is set automatically in automatic games.  
+So the game is looping through turns, and each turn that comes up the user types in the set() for each of the turns.  You need to consider 2 things here: what happens if there’s a typo on entering this shit in, and how do you print out the state of the game and the turn history so that the player can make intelligent guesses?  The loop keeps checking that the value for the previous turn’s ruling variable is not set to “no ruling” or whatever you’ll put when no one responded.  Then the game stops and reports the person who made that guess and declares that person the winner.  
+
+ 
+
+
+Email the guy who wrote learn_python_the_hard_way after this to see what he thinks of your game. 
+In gorgons, a scene has a method called enter that does all the work and then returns the result of being in the scene—either death, the next scene name, or finished
+
+
+
+
 Notes on the current state:
 11/17: 
 This is horrific spaghetti code.  Pretty embarassing.  But I think I'm going to push on to see
