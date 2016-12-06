@@ -37,7 +37,7 @@ Game needs to have a variable with the actual scene stored in automatic games.  
 Game needs to have a variable that stores the player’s actual cards.  This gets entered in for manual games but is set automatically in automatic games.  
 So the game is looping through turns, and each turn that comes up the user types in the set() for each of the turns.  You need to consider 2 things here: what happens if there’s a typo on entering this shit in, and how do you print out the state of the game and the turn history so that the player can make intelligent guesses?  The loop keeps checking that the value for the previous turn’s ruling variable is not set to “no ruling” or whatever you’ll put when no one responded.  Then the game stops and reports the person who made that guess and declares that person the winner.  
 
- 
+Do you want to try to build this with composition and or inheritance? 
 
 
 Email the guy who wrote learn_python_the_hard_way after this to see what he thinks of your game. 
