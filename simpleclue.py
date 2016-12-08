@@ -1,68 +1,128 @@
+#Work on usability by printing relevant things that are formatted in an easy to read way.  Number all the lists that the user sees and selects from.
+
+#need to figure out how to prevent a typo from breaking the entire game.  
+#read online to get good strategies
+
 import sys
-import simplecluestrat
 
-def runGame(gameStyle, list):
-  #masterhistory is the absolute state of the game, but is selectively revealed to players on their turn.  
-  #A strategy can choose to make use of as much or as little of that info as it wants to.
-  masterhistory = [list[0],[list[1],list[2],list[3]],[]] #assuming only 3 players for now.  
-  n = 0
-  gameOver = False
-  while not gameOver:
-    tempjunk = input("Enter the number of the player whose turn it is.  You are player 0, the player to your left is player 1.")
-    if(tempjunk is "x"):
-      break
-    if(int(tempjunk)>n):
-      n=int(tempjunk)
-    cleanedhistory = simplecluestrat.cleanMasterHistory(n%3,masterhistory) #for player n, hide all the things that player n would not have seen
-    if(gameStyle ==1):
-      if(n%3==0):
-        guess = simplecluestrat.dontBeDumb(cleanedhistory)
-        print(guess)
-        guessresponse = simplecluestrat.inputGuessResponse()
-      else:
-        guess = simplecluestrat.inputGuess()
-        guessresponse=simplecluestrat.inputGuessResponse()
-      print(guess)
-    else:
-      guess = simplecluestrat.dontBeDumb(cleanedhistory) #player n makes a guess based on his/her strategy, currently hardcoded to dontBeDumb.  Should make this a param.
-      guessresponse = simplecluestrat.evaluateGuess(n, guess, masterhistory) #the player and the card that respond to the guess
-    print(guessresponse)
-    masterhistory[2].append([n%3,guess,guessresponse]) #update master history with that information
-    print(masterhistory)
-    n=n+1%3
-    #print(guessresponse)
-    #print(guessresponse == ['x',['x','x']])
-    if(guessresponse == ['x',['x','x']]):
-      gameOver=True
-  for item in masterhistory:
-    print(item)
-
-def main():
-  #future ideas: allow user to choose the cards for the whodunnit for experimentation purposes, have args 
-  #that define the strategy of each of the players.   
-  if (len(sys.argv) !=2):
-    print("pre-screen")
-    print("To run the program, please enter these args:")
-    print("simpleclue.py numberOfPlayers")
-    for item in sys.argv:
+class Game(object):
+  #should all variables always be self.var ?
+  suspects = ["Miss Scarlet", "Professor Plum", "Mrs. Peacock", "Mr. Green", "Colonel Mustard", "Mrs. White"]
+  weapons = ["Candlestick", "Knife", "Pipe", "Revolver", "Rope", "Wrench"]
+  rooms = ["Ballroom", "Conservatory", "Billiard Room", "Library", "Study", "Hall", "Lounge", "Dining Room", "Kitchen"]
+  turnHistory = []
+    
+  def __init__(self, players): #for now the game assumes all manual players, just taking an int for the number of them.  Need a way to shuffle and deal the cards for an automatic game.
+    #I tried to define this outside of __init__ so they are global/constants for all games... not sure why but it didn't work.     
+    self.players = players #number of players in the game    
+    self.solution = Scene() #Manually entered for now.
+    self.startingPlayer = int(input("Enter the player number who starts first (player 0 through %d)\n" %(self.players-1)))
+    self.userPlayerNumber = int(input("Enter your player number (player 0 through %d)\n" %(self.players-1)))
+    self.userStrategy = Strategy(self) #this can be where the user selects which Strategy to use.
+  
+  #def addYourCards is used in manual games for the user to type in what cards they have.  This again makes me think cards should be a class.
+  
+  def play(self):
+    self.gameOver = False
+    while(not self.gameOver):    
+      self.turnHistory.append(Turn(self))
+      self.gameOver = self.turnHistory[-1].accusationCorrect
+      
+class Scene(Game):  #not sure if it should extend Game, but every scene lives within a game, right?  I'm doing it to get access to the suspects, weapons, and rooms
+  
+  def __init__(self):
+    self.scene=[]
+    print("Select, using 0 to %d, the Scene's suspect: " % (len(self.suspects)-1))
+    for item in self.suspects:
       print(item)
-    sys.exit(0)  
-  #outcome = runGame(sys.argv)
-  #Shuffle and deal the cards now.  Use runGame for the mechanics. 
-  #assuming only 3 players for now to keep things simple
-  player0 = [[0,1],[1,1],[2,1]]
-  player1 = [[0,1],[1,1],[2,2]]
-  player2 = [[0,1],[1,1],[2,2]]
-  gameStyle = 1 #int(input("1 for manual, 2 for computer-run:")) #Note: not planning on building out option #2.  The bones are all there to do it, though.
-  if(gameStyle==1):
-    x="x"
-    answer=[[x,x],[x,x],[x,x]]
-  else:
-    answer = [[0,0],[1,0],[2,0]]
-  #The player to the left of the person using the program is player 0.
-  runGame(gameStyle, [answer, player0, player1, player2])
+    self.scene.append(int(input("> ")))
+    
+    print("Select, using 0 to %d, the Scene's weapon: " % (len(self.weapons)-1))
+    for item in self.weapons:
+      print(item)
+    self.scene.append(int(input("> ")))
+    
+    print("Select, using 0 to %d, the Scene's room: " % (len(self.rooms)-1))
+    for item in self.rooms:
+      print(item)
+    self.scene.append(int(input("> ")))
+    
+    print("You selected the following scene:")
+    self.printScene()
 
-#NOTE: would love to have this data structure reviewed by an experienced code.  There has GOT to be a better way of doing this.
-#NOTE: need to have a way where if you mistype, it doesn't wreck the code.
-if __name__ == '__main__':
-  main()
+  def printScene(self):
+    print(self.suspects[self.scene[0]])
+    print(self.weapons[self.scene[1]])
+    print(self.rooms[self.scene[2]])
+
+class Turn(Game): #not sure if it should extend Game, but a turn lives inside a game and I may need access to the suspects, weapons, and rooms.
+  
+  def __init__(self,gameName):
+    self.number = len(self.turnHistory)
+    self.player = (gameName.startingPlayer + self.number)%gameName.players
+    #good practice?  Declare all the variables that a turn needs right here and now and set them to nothing and then start modifying them.
+    print("Ok!  Let's begin turn number %d" % self.number)
+    print("This is player %d's turn.  You are player %d" %(self.player,gameName.userPlayerNumber))
+    if(self.player==gameName.userPlayerNumber):
+      gameName.userStrategy.printTopThree(gameName)
+    self.accusationMade = input("Was there an accusation made? (y/n)\n")
+    self.accusationCorrect = False
+    if(self.accusationMade == 'y'):
+      #self.accusationCorrect = False
+      self.accusation = Scene() #will need to pass parameter for manual once manual/automatic distinction is created
+      self.respondingPlayer = input("Type the player number who answered (press ENTER if no one answered)\n")
+      if(self.respondingPlayer):
+        # this section seems waaaay too cumbersome.  There should be a way to improve this.  Card object?
+        self.temp1Response = input("Type the type used to disprove the accusation (suspect, weapon, room) (press ENTER if you didn't see it)\n")
+        if('suspect' in self.temp1Response):
+          print("Which Suspect?")
+          for suspect in gameName.suspects:
+            print(suspect)
+          self.tempjunk = int(input("Enter the number: ")) # can this be combined with the next line?
+          self.respondingCard = gameName.suspects[self.tempjunk]
+        elif('weapon' in self.temp1Response):
+          print("Which Weapon?")
+          for weapon in gameName.weapons:
+            print(weapon)
+          self.tempjunk = int(input("Enter the number: "))
+          self.respondingCard = gameName.weapons[self.tempjunk]
+        elif('room' in self.temp1Response):
+          print("Which Room?")
+          for room in gameName.rooms:
+            print(room)
+          self.tempjunk = int(input("Enter the number: "))
+          self.respondingCard = gameName.rooms[self.tempjunk]
+        else:
+          print("Ok, you didn't see it.")
+          self.respondingCard = ''
+        self.respondingPlayer = int(self.respondingPlayer)
+      else:
+        print("The accusation was correct.  Game Over!")
+        self.accusation.printScene()
+        self.accusationCorrect=True
+    else:
+      self.respondingPlayer = None
+      #self.accusationCorrect = False
+      
+  def printTurn(self, gameName):
+    print("\nHistory for Turn Number: %d" %self.number)
+    print("Player Number: %d" %self.player)
+    print("An accusation was made: %s" %self.accusationMade)
+    print("Responding player: %r" %self.respondingPlayer)
+    print("Responding card: %r" %self.respondingCard)
+
+class Strategy(Game):
+  def __init__(self, gameName):
+    pass
+  def printTopThree(self, gameName):
+    print("Here's the turn history\n")
+    for turnItem in gameName.turnHistory:
+      turnItem.printTurn(gameName)
+    print("Here are your top 3 guesses according to this algorithm")
+    print("Mustard, Knife, Ballroom")
+    print("Mustard, Knife, Ballroom")
+    print("Mustard, Knife, Ballroom")
+
+players = int(input("How many players?\n"))
+test = Game(players)
+test.play()
