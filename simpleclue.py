@@ -1,3 +1,9 @@
+# TO DO:
+"""
+Get strategy working with known guesses and implement ways of weighting inferred facts
+change readme and scope of project to be clueAssistant
+Improvements to code: Change subclassing make a note about how strategy might 
+
 #Go through the best practices section of learn python the hard way and edit the code to reflect best practices.  Look for duplicated code (printing lists).  init function does too much
 #You've got lots of duplicated code-- spend some time looking through to think about how you can simplify things and despaghetti this.  It's not
 #so bad right now but you can definitely do better.
@@ -5,22 +11,24 @@
 #Once the code is clean and tight, you need to figure out how to prevent a typo from breaking the entire game.  (Basically every input chunk of code that takes
 #user input needs to be inside some block of code that reruns if the user doesn't confirm after the code prints what they entered and asks for confirmation)
 
-#Actually make a strategy that helps you.  Read online to get good strategies.  Think about how to make strategies that filter out guesses so that you can 
+#Find a way to improve your strategy  Read online to get good strategies.  Think about how to make strategies that filter out guesses so that you can 
 #choose the rooms
+"""
 
 import sys
 
 class Game(object):
   #should all variables always be self.var ?
-  suspects = ["Miss Scarlet", "Professor Plum", "Mrs. Peacock", "Mr. Green", "Colonel Mustard", "Mrs. White"]
-  weapons = ["Candlestick", "Knife", "Pipe", "Revolver", "Rope", "Wrench"]
-  rooms = ["Ballroom", "Conservatory", "Billiard Room", "Library", "Study", "Hall", "Lounge", "Dining Room", "Kitchen"]
+  #space at the end of each card is my bad way of making printing turns look good
+  suspects = ["Miss Scarlet   ", "Professor Plum ", "Mrs. Peacock   ", "Mr. Green      ", "Colonel Mustard", "Mrs. White     "]
+  weapons = ["Candlestick", "Knife      ", "Pipe       ", "Revolver   ", "Rope      ", "Wrench     "]
+  rooms = ["Ballroom     ", "Conservatory ", "Billiard Room", "Library      ", "Study        ", "Hall         ", "Lounge       ", "Dining Room  ", "Kitchen      "]
   turnHistory = []
     
   def __init__(self): #for now the game assumes all manual players, just taking an int for the number of them.  Need a way to shuffle and deal the cards for an automatic game.
     #I tried to define this outside of __init__ so they are global/constants for all games... not sure why but it didn't work.         
     self.players = int(input("\nHow many players?\n"))
-    self.solution = Scene() #Manually entered for now.
+    #self.solution = Scene() #Manually entered for now.
     self.startingPlayer = int(input("\nEnter the player number who starts first (player 0 through %d)\n" %(self.players-1)))
     self.userPlayerNumber = int(input("\nEnter your player number (player 0 through %d)\n" %(self.players-1)))
     self.userStrategy = Strategy(self) #this can be where the user selects which Strategy to use.
@@ -64,29 +72,33 @@ class Game(object):
 class Scene(Game):  #not sure if it should extend Game, but every scene lives within a game, right?  I'm doing it to get access to the suspects, weapons, and rooms
   
   def __init__(self):
-    self.scene=[]
+    #self.scene=[]
+    self.suspect=""
+    self.weapon=""
+    self.room=""
+    
     print("\nSelect, using 0 to %d, the Scene's suspect: " % (len(self.suspects)-1))
     for item in self.suspects:
       print(self.suspects.index(item), item)
-    self.scene.append(int(input("> ")))
+    self.suspect = self.suspects[int(input("> "))]  #store as int or as pointer to the suspects string?
     
     print("\nSelect, using 0 to %d, the Scene's weapon: " % (len(self.weapons)-1))
     for item in self.weapons:
       print(self.weapons.index(item), item)
-    self.scene.append(int(input("> ")))
+    self.weapon = self.weapons[int(input("> "))]
     
     print("\nSelect, using 0 to %d, the Scene's room: " % (len(self.rooms)-1))
     for item in self.rooms:
       print(self.rooms.index(item), item)
-    self.scene.append(int(input("> ")))
+    self.room = self.rooms[int(input("> "))]
     
     print("\nYou selected the following scene:")
     self.printScene()
 
   def printScene(self):
-    print(self.scene[0], self.suspects[self.scene[0]])
-    print(self.scene[1], self.weapons[self.scene[1]])
-    print(self.scene[2], self.rooms[self.scene[2]])
+    print(self.suspects.index(self.suspect), self.suspect)
+    print(self.weapons.index(self.weapon), self.weapon)
+    print(self.rooms.index(self.room), self.room)
 
 class Turn(Game): #not sure if it should extend Game, but a turn lives inside a game and I may need access to the suspects, weapons, and rooms.
   
