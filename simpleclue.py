@@ -1,65 +1,56 @@
-# TO DO:
-"""
-Get strategy working with known guesses and implement ways of weighting inferred facts
-change readme and scope of project to be clueAssistant
-Improvements to code: Change subclassing make a note about how strategy might 
+# TO DO
 
-#Go through the best practices section of learn python the hard way and edit the code to reflect best practices.  Look for duplicated code (printing lists).  init function does too much
-#You've got lots of duplicated code-- spend some time looking through to think about how you can simplify things and despaghetti this.  It's not
-#so bad right now but you can definitely do better.
+#Push forward on the strategy-- getting the map (known and inferred) built and then producing the ranking of each of the card types.
 
-#Once the code is clean and tight, you need to figure out how to prevent a typo from breaking the entire game.  (Basically every input chunk of code that takes
-#user input needs to be inside some block of code that reruns if the user doesn't confirm after the code prints what they entered and asks for confirmation)
+#Update readme to reflect refined scope.  
+#  Project isn't to simulate a game of clue-- it's to assist someone playing it by giving them their best guesses.  Consdering new name: clueAssistant
+#  Thus, all parts of the code that were meant to be flexible or allow for automatic play of the game have been removed
+#  Need better way of handling cards.  Dict?
+#  Make a note about how you're assuming a single strategy (MapRefinement) but how things could change if there were several available.
 
-#Find a way to improve your strategy  Read online to get good strategies.  Think about how to make strategies that filter out guesses so that you can 
-#choose the rooms
-
-Need better way of handling cards.  Dict?
-"""
+#Code Improvements
+#  Do an audit-- go through a mock game to make sure there aren't bugs, come up with some scenarios to test the logic.
+#  Use learn-python-the-hard-way to review best practices and make sure the code follows these.  (init function not overloaded?) 
+#  Look for duplicated code (printing lists, some noted in the comments, spend some time looking through to think about how you can simplify and group/condense things into their proper logical groups.
+#  Once the code is clean and tight, you need to figure out how to prevent a typo from breaking the entire game.  (Basically every input chunk of code that takes user input needs to be inside some block of code that reruns if the user doesn't confirm after the code prints what they entered and asks for confirmation)
+#  Additional strategy improvements.  Right now the strategy isn't super sophisticated-- it uses 1/2 dozen basic things to create the map.  Think hard to make sure the strategy is capturing everything-- come up with scenarios where information is learned and make sure the strategy grabs that info. Read online to get good strategies.  Think about making a while loop that performs internal checks on the map-- what can it learn from itself?  Once you've done the "matrix" work, go back through turnByTurn (maybe beef the method itself up), Loop through the turns and see what else you learn from the turn now that the map has been updated.  terminate the while loop if the map after the while loop is the same as the map before it.
 
 import sys
 
 class Game(object):
-  #should all variables always be self.var ?
-  #space at the end of each card is my bad way of making printing turns look good
-  suspectsList = ["Miss Scarlet    ", "Professor Plum  ", "Mrs. Peacock    ", "Mr. Green       ", "Colonel Mustard ", "Mrs. White      "]
-  weaponsList = ["Candlestick ", "Knife       ", "Pipe        ", "Revolver    ", "Rope        ", "Wrench      "]
-  roomsList = ["Ballroom      ", "Conservatory  ", "Billiard Room ", "Library       ", "Study         ", "Hall          ", "Lounge        ", "Dining Room   ", "Kitchen       "]
-  turnHistory = []
-  cards = {
-  "Miss Scarlet    " : "suspect", 
-  "Professor Plum  " : "suspect", 
-  "Mrs. Peacock    " : "suspect", 
-  "Mr. Green       " : "suspect", 
-  "Colonel Mustard " : "suspect", 
-  "Mrs. White      " : "suspect",
-  "Candlestick " : "weapon",
-  "Knife       " : "weapon", 
-  "Pipe        " : "weapon", 
-  "Revolver    " : "weapon", 
-  "Rope        " : "weapon", 
-  "Wrench      " : "weapon",
-  "Ballroom      " : "room", 
-  "Conservatory  " : "room", 
-  "Billiard Room " : "room", 
-  "Library       " : "room", 
-  "Study         " : "room", 
-  "Hall          " : "room", 
-  "Lounge        " : "room", 
-  "Dining Room   " : "room", 
-  "Kitchen       " : "room"}
-     
-  def __init__(self): #for now the game assumes all manual players, just taking an int for the number of them.  Need a way to shuffle and deal the cards for an automatic game.
-    #I tried to define this outside of __init__ so they are global/constants for all games... not sure why but it didn't work.         
+  def __init__(self): 
+    #space at the end of each card is my bad way of making printing turns look good
+    self.cards = [
+    "Miss Scarlet    ", 
+    "Professor Plum  ", 
+    "Mrs. Peacock    ", 
+    "Mr. Green       ", 
+    "Colonel Mustard ", 
+    "Mrs. White      ",
+    "Candlestick     ",
+    "Knife           ", 
+    "Pipe            ", 
+    "Revolver        ", 
+    "Rope            ", 
+    "Wrench          ",
+    "Ballroom        ", 
+    "Conservatory    ", 
+    "Billiard Room   ", 
+    "Library         ", 
+    "Study           ", 
+    "Hall            ", 
+    "Lounge          ", 
+    "Dining Room     ", 
+    "Kitchen         "]
+    self.suspectsList = [self.cards[0], self.cards[1], self.cards[2], self.cards[3], self.cards[4], self.cards[5]]
+    self.weaponsList = [self.cards[6], self.cards[7], self.cards[8], self.cards[9], self.cards[10], self.cards[11]]
+    self.roomsList = [self.cards[12], self.cards[13], self.cards[14], self.cards[15], self.cards[16], self.cards[17], self.cards[18], self.cards[19], self.cards[20]]
+    
+    self.turnHistory = []
     self.players = int(input("\nHow many players?\n"))
-    #self.solution = Scene() #Manually entered for now.
     self.startingPlayer = int(input("\nEnter the player number who starts first (player 0 through %d)\n" %(self.players-1)))
-    self.userPlayerNumber = int(input("\nEnter your player number (player 0 through %d)\n" %(self.players-1))) #this should probably be stored in the player object.
-    user = Player(self)
-    user.inputCards(self)
-    self.userStrategy = Strategy(self) #this can be where the user selects which Strategy to use. 
-    self.userStrategy.userCards(self,user)
-    self.userStrategy.viewedCards(self)
+    
+    self.user = Player(self)
       
   def play(self):
     self.gameOver = False
@@ -76,29 +67,28 @@ class Game(object):
     elif("room" in cardType):
       return self.roomsList
     else:
-      return list(self.cards.keys())
+      return self.cards
     
-  def printCards(self, cardType):
-    print()
-    for item in self.getCards(cardType):
-      print(self.getCards(cardType).index(item), item)
+  def printCards(self, cardType): #this code is somewhat redudant with the code in setScene in the class Scene
+    for item in self.cards:
+      print(self.cards.index(item), item)
   
-class Scene():
+class Scene(object):
   
   def __init__(self,gameName):
     self.suspect=""
     self.weapon=""
     self.room=""
     
-    self.suspectsList = gameName.getCards("suspect")
-    self.weaponsList = gameName.getCards("weapon")
-    self.roomsList = gameName.getCards("room")
+    self.setScene(gameName)
+    print("\nYou selected the following scene:")
+    self.printScene()
     
+  def setScene(self, gameName):
     print("\nSelect, using 0 to %d, the Scene's suspect: " % (len(gameName.suspectsList)-1))
     for item in gameName.suspectsList:
       print(gameName.suspectsList.index(item), item)
-    self.suspect = gameName.suspectsList[int(input("> "))]  #store as int or as pointer to the suspects string?
-    #print(self.suspect)
+    self.suspect = gameName.suspectsList[int(input("> "))]  #stored as pointer to the suspect's string, correct?
     
     print("\nSelect, using 0 to %d, the Scene's weapon: " % (len(gameName.weaponsList)-1))
     for item in gameName.weaponsList:
@@ -109,126 +99,167 @@ class Scene():
     for item in gameName.roomsList:
       print(gameName.roomsList.index(item), item)
     self.room = gameName.roomsList[int(input("> "))]
-    
-    print("\nYou selected the following scene:")
-    self.printScene()
-
+  
   def printScene(self):
     print(self.suspect, self.weapon, self.room, end = "")
-    
-  def printSceneLine(self):
-    print(self.suspect, self.weapon, self.room, end = "")
 
     
-class Turn(): #not sure if it should extend Game, but a turn lives inside a game and I may need access to the suspects, weapons, and rooms.
+class Turn(object):
   
   def __init__(self,gameName):
     self.number = len(gameName.turnHistory)
     self.player = (gameName.startingPlayer + self.number)%gameName.players
-    #good practice?  Declare all the variables that a turn needs right here and now and set them to nothing and then start modifying them.
+    self.accusationMade = ""
+    self.accusation = None
+    self.accusationCorrect = False
+    self.respondingPlayer = None
+    self.respondingCard = None
+    
     print("\n","-"*20)
     print("TURN NUMBER: %d" % self.number)
-    print("Player %d's turn.  (You are player %d)" %(self.player,gameName.userPlayerNumber))
-    if(self.player==gameName.userPlayerNumber):
-      gameName.userStrategy.printTurnHistory(gameName)
-    self.accusationMade = input("\nWas there an accusation made? (y/n)\n")
-    self.accusationCorrect = False
-    self.respondingCard = None
-    if(self.accusationMade == 'y'):
-      #self.accusationCorrect = False
-      self.accusation = Scene(gameName) #will need to pass parameter for manual once manual/automatic distinction is created
-      self.respondingPlayer = input("\nType the player number who answered.  Player %d made the accusation. (press ENTER if no one answered)\n" % self.player)
-      if(self.respondingPlayer):
-        # this section seems waaaay too cumbersome.  There should be a way to improve this.  Card object?
-        self.temp1Response = input("\nType the type used to disprove the accusation (suspect, weapon, room) (press ENTER if you didn't see it)\n")
-        if('suspect' in self.temp1Response):
-          print("\nWhich Suspect?")
-          for suspect in gameName.suspectsList:
-            print(gameName.suspectsList.index(suspect), suspect)
-          self.tempjunk = int(input("\nEnter the number: ")) # can this be combined with the next line?
-          self.respondingCard = gameName.suspectsList[self.tempjunk]
-        elif('weapon' in self.temp1Response):
-          print("\nWhich Weapon?")
-          for weapon in gameName.weaponsList:
-            print(gameName.weaponsList.index(weapon), weapon)
-          self.tempjunk = int(input("\nEnter the number: "))
-          self.respondingCard = gameName.weaponsList[self.tempjunk]
-        elif('room' in self.temp1Response):
-          print("\nWhich Room?")
-          for room in gameName.roomsList:
-            print(gameName.roomsList.index(room), room)
-          self.tempjunk = int(input("\nEnter the number: "))
-          self.respondingCard = gameName.roomsList[self.tempjunk]
-        else:
-          print("Ok, you didn't see it.")
-        self.respondingPlayer = int(self.respondingPlayer)
-      else:
-        print("The accusation was correct.  Game Over!")
-        self.accusation.printScene()
-        self.accusationCorrect=True
-    else:
-      self.respondingPlayer = None
-      
-  def printTurn(self, gameName):
-    #print("\nHistory for Turn Number: %d" %self.number)
-    print("Turn %d " %self.number, end = "")
-    print("Player %d " %self.player, end = "")
-    #print("An accusation was made: %s" %self.accusationMade)
-    #print("The accusing scene was: ")# NEED TO PRINT THE SCENE
-    if(self.accusationMade == 'y'):
-      self.accusation.printSceneLine()
-      print(" Responding player: %r, " %self.respondingPlayer, end = "")
-      print(self.respondingCard)
-    else:
-      print()
-
-class Strategy(Game):
- 
-  def __init__(self,gameName):
-    #create a dict with the key as the card string and the value as the maplet
-    self.myMap = {}
-    for item in list(gameName.cards.keys()):
-      self.myMap[item] = Maplet(gameName)
+    print("Player %d's turn.  (You are player %d)\n" %(self.player,gameName.user.number))
   
+    if(self.player==gameName.user.number):
+      gameName.user.implementStrategy(gameName)
+    
+    self.accusationMade = input("Was there an accusation made? (y/n)\n")
+    if(self.accusationMade == 'y'):
+      self.manageAccusation(gameName)
+    
+  def manageAccusation(self,gameName):
+    self.accusation = Scene(gameName) 
+    self.respondingPlayer = input("\nType the player number who answered.  Player %d made the accusation. (press ENTER if no one answered)\n" % self.player)
+    if(self.respondingPlayer):
+      for item in gameName.cards:
+        print(gameName.cards.index(item), item) #Seems like redundant code-- condense this type of card presentation into one code area?
+      self.tempjunk = input("\nEnter the number of the card.  (press ENTER if you didn't see it)\n")
+      if(self.tempjunk):
+        self.respondingCard = gameName.suspectsList[int(self.tempjunk)]
+      else:
+        print("Ok, you didn't see it.")
+      self.respondingPlayer = int(self.respondingPlayer)
+    else:
+      print("The accusation was correct.  Game Over!\n")
+      self.accusation.printScene()
+      self.accusationCorrect=True
+      
+  def printTurn(self, gameName): #can the branching be eliminated?  If self.accusation is None and .printScene is called, what happens?  error, right?
+    if(self.accusationMade == 'y'):
+      print("Turn %d " %self.number, "Player %d " %self.player, end = "")
+      self.accusation.printScene()
+      print(" Responding player: %r, " %self.respondingPlayer, self.respondingCard)
+    else:
+      print("Turn %d " %self.number, "Player %d " %self.player)
+
+class MapRefinement(object):
+
+  def __init__(self,gameName):
+    self.myMap = {}
+    for item in gameName.cards:
+      self.myMap[item] = Maplet(gameName)
+      
+  def executeStrategy(self,gameName):
+    print("EXECUTE STRATEGY")
+    self.userCards(gameName)
+    self.viewedCards(gameName)
+    self.unheldCards(gameName)    
+    self.turnByTurn(gameName) 
+    #The map has completed all it's 'known' information.  Now we move on to inferred information
+ 
+    #inferred information: 
+    #someone stops a card. (gives a boost).  More than once gives something like adding the triangular number of the times a card is stopped to the weighting?
+    #Someone makes an accusation with a card in it-- they probably don't have that card.
+ 
+    #Ranking: Best card to guess would be one where you see lots of people don't have the card.  Also one where there is a lot of negative weights.
+
+    self.printTurnHistory(gameName)    
+    print("\n\nMap at end of strategy execution")
+    self.printMap(gameName)
+    print("-"*20)
+    print("\nHere are the rankings for each card Type:")
+    print("RANKING HERE")
+    print("-"*20)
+
   def printMap(self,gameName):
-    for item in list(self.myMap.keys()):
+    for item in gameName.cards:
       print(item, end = "")
       self.myMap[item].printMaplet()
       print()
 
-  def userCards(self,gameName,userName):
-    for card in userName.cards:
-      #print(self.myMap)
+  def userCards(self,gameName):
+    for card in gameName.user.cards:
       tempMaplet = self.myMap[card]
-      print(tempMaplet)
-      tempMaplet.setTrue(gameName.userPlayerNumber)    
-    self.printMap(gameName)
+      tempMaplet.setTrue(gameName.user.number)    
     
   def viewedCards(self, gameName):
-    print("ViewedCards called")
     for turnItem in gameName.turnHistory:
-      print(gameName.respondingCard)
-      if(gameName.respondingCard):
-        tempMaplet = self.myMap[gameName.respondingCard]
-        tempMaplet.setTrue(turnItem.player)
-    
+      #print(turnItem.respondingCard)
+      if(turnItem.respondingCard):
+        tempMaplet = self.myMap[turnItem.respondingCard]
+        tempMaplet.setTrue(turnItem.respondingPlayer)
+  
+  def unheldCards(self, gameName):
+    for turnItem in gameName.turnHistory:
+      if(turnItem.accusationMade == "y"):
+        tempjunk = (turnItem.player + 1) % gameName.players
+        while tempjunk != turnItem.respondingPlayer: #This next block could definitely be more efficient
+          #player with number of tempjunk doesn't have any of the cards in the scene
+          tempscene = turnItem.accusation
+          
+          tempsuspect = tempscene.suspect
+          tempMaplet = self.myMap[tempsuspect]
+          if(tempMaplet.contents[tempjunk] == True):
+            print("ERROR IN UNHELDCARDS, suspect")
+            sys.exit(1)
+          tempMaplet.contents[tempjunk] = False
+          
+          tempweapon = tempscene.weapon
+          tempMaplet = self.myMap[tempweapon]
+          if(tempMaplet.contents[tempjunk] == True):
+            print("ERROR IN UNHELDCARDS, weapon")
+            sys.exit(1)
+          tempMaplet.contents[tempjunk] = False
+          
+          temproom = tempscene.room
+          tempMaplet = self.myMap[temproom]
+          if(tempMaplet.contents[tempjunk] == True):
+            print("ERROR IN UNHELDCARDS, room")
+            sys.exit(1)
+          tempMaplet.contents[tempjunk] = False
+          
+          tempjunk= (tempjunk + 1) % gameName.players
+
+  def turnByTurn(self, gameName): #can probably get more information into the map in this method.  Also this code is very inefficient.
+    for turnItem in gameName.turnHistory:
+      if(turnItem.accusationMade == "y"):
+        #get the 3 cards from the accusation in the turn
+        #check to see their status for the player that disproved the accusation.  If any pair are False, then set the 3rd to be true.  
+      
+        suspectMaplet = self.myMap[turnItem.accusation.suspect]
+        weaponMaplet = self.myMap[turnItem.accusation.weapon]
+        roomMaplet = self.myMap[turnItem.accusation.room]
+        if((suspectMaplet.contents[turnItem.respondingPlayer] == False) and (weaponMaplet.contents[turnItem.respondingPlayer] == False)):
+          roomMaplet.setTrue(turnItem.respondingPlayer)
+        elif((weaponMaplet.contents[turnItem.respondingPlayer] == False) and (roomMaplet.contents[turnItem.respondingPlayer] == False)):
+          suspectMaplet.setTrue(turnItem.respondingPlayer)
+        elif((roomMaplet.contents[turnItem.respondingPlayer] == False) and (suspectMaplet.contents[turnItem.respondingPlayer] == False)):
+          weaponMaplet.setTrue(turnItem.respondingPlayer)
+        else:
+          pass
+  
   def printTurnHistory(self, gameName):
     print("\n","-"*20,"\nHere's the turn history\n")
     for turnItem in gameName.turnHistory:
       turnItem.printTurn(gameName)
     print("-"*20)
     
-    print("\nHere is the Map:")
-    self.printMap(gameName)
-    print("\nHere are the rankings for each card Type:")    
     
-class Maplet(Game):
-  #Nothing except for Map will interact with Maplets
+class Maplet(object):  #Nothing except for MapRefinement will interact with Maplets
   def __init__(self,gameName):
     self.contents = []
     i=0
     while i < gameName.players:
-      self.contents.append(0)
+      self.contents.append(None)
       i+=1
   
   def setTrue(self, player):
@@ -249,30 +280,30 @@ class Maplet(Game):
     for item in self.contents:
       print(item, end = "")
       
-  
-class Player(Game):
+class Player(object):
   def __init__(self, gameName):
-    self.cards = []
-  def inputCards(self, gameName):
+    self.number = int(input("\nEnter your player number (player 0 through %d)\n" %(gameName.players-1)))
+    
+    self.cards = []    
     print("\nStart entering your cards:")
+    for item in gameName.cards:
+      print(gameName.cards.index(item), item) #Seems like redundant code-- condense this type of card presentation into one code area?
     while True:  
-      self.cardType = input("Suspect, Weapon, or Room (ENTER if done)\n\n")
-      if(not self.cardType):
+      self.tempCard = input("\nEnter the number of the card.  (press ENTER when done)\n")
+      if(not self.tempCard):
         break
       else:
-        gameName.printCards(self.cardType)
-        self.cardNumber = int(input("\nEnter Card Number:\n"))
-        temp = gameName.getCards(self.cardType) #will throw an error due to changing how cards are being stored
-        self.cards.append(temp[self.cardNumber])
-        #print(self.cardType, self.cardNumber)
+        self.cards.append(gameName.cards[int(self.tempCard)])
     print("Your cards are: ")
     self.printCards(gameName)
-    print()
-    
+  
+  def implementStrategy(self, gameName):
+    self.myStrategy = MapRefinement(gameName)
+    self.myStrategy.executeStrategy(gameName)
+  
   def printCards(self,gameName):
     for item in self.cards:
       print(item)
       
 test = Game()
-#print(list(test.cards.keys()))
 test.play()
