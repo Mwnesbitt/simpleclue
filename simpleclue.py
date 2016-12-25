@@ -1,19 +1,23 @@
 # TO DO
 
-#Push forward on the strategy-- getting the map (known and inferred) built and then producing the ranking of each of the card types.
+#MPV Items:
+#  Push forward on the strategy: producing the ranking of each of the card types.
+#  Figure out how to prevent an error in entering information from breaking the entire game.  (Basically every input chunk of code that takes user input needs to be inside a while true loop where the last section repeats back to the user what was entered and is then an if statement-- if user confirms, break out of the loop.
 
 #Update readme to reflect refined scope.  
 #  Project isn't to simulate a game of clue-- it's to assist someone playing it by giving them their best guesses.  Consdering new name: clueAssistant
 #  Thus, all parts of the code that were meant to be flexible or allow for automatic play of the game have been removed
+#  MVP reached -- still a bit fragile but it can be used now.  See Beyond MVP section for the list of things that should be done.
 #  Need better way of handling cards.  Dict?
 #  Make a note about how you're assuming a single strategy (MapRefinement) but how things could change if there were several available.
+#  Make a note about how the code doesn't do any checking on whether user entries make sense/are possible. (also if a weapon stopped an accusation the user shouldn't have to type it in)
 
-#Code Improvements
+#Beyond MVP
 #  Do an audit-- go through a mock game to make sure there aren't bugs, come up with some scenarios to test the logic.
 #  Use learn-python-the-hard-way to review best practices and make sure the code follows these.  (init function not overloaded?) 
 #  Look for duplicated code (printing lists, some noted in the comments, spend some time looking through to think about how you can simplify and group/condense things into their proper logical groups.
-#  Once the code is clean and tight, you need to figure out how to prevent a typo from breaking the entire game.  (Basically every input chunk of code that takes user input needs to be inside some block of code that reruns if the user doesn't confirm after the code prints what they entered and asks for confirmation)
-#  Additional strategy improvements.  Right now the strategy isn't super sophisticated-- it uses 1/2 dozen basic things to create the map.  Think hard to make sure the strategy is capturing everything-- come up with scenarios where information is learned and make sure the strategy grabs that info. Read online to get good strategies.  Think about making a while loop that performs internal checks on the map-- what can it learn from itself?  Once you've done the "matrix" work, go back through turnByTurn (maybe beef the method itself up), Loop through the turns and see what else you learn from the turn now that the map has been updated.  terminate the while loop if the map after the while loop is the same as the map before it.
+#  Additional strategy improvements.  Right now the strategy isn't super sophisticated-- it uses 1/2 dozen basic things to refine the map and may not be determining as much as it could.  Think hard to make sure the strategy is capturing everything-- come up with scenarios where information is learned and make sure the strategy grabs that info. Read online to get good strategies.  Think about making a while loop that performs internal checks on the map-- what can it learn from itself?  Once you've done the "matrix" work, go back through turnByTurn (maybe beef the method itself up), Loop through the turns and see what else you learn from the turn now that the map has been updated.  terminate the while loop if the map after the while loop is the same as the map before it.
+#  Allow the game to print out its state to a file and to load a state from a properly formatted file.  Then you can put game.play() inside a try-catch that prints to the file if an exception is encountered.  Then you can go edit the file (if necessary) and start a new game and point it to that file so you don't lose all your progress.  Probably storing all Game variables would be enough.
 
 import sys
 
@@ -134,7 +138,7 @@ class Turn(object):
         print(gameName.cards.index(item), item) #Seems like redundant code-- condense this type of card presentation into one code area?
       self.tempjunk = input("\nEnter the number of the card.  (press ENTER if you didn't see it)\n")
       if(self.tempjunk):
-        self.respondingCard = gameName.suspectsList[int(self.tempjunk)]
+        self.respondingCard = gameName.cards[int(self.tempjunk)]
       else:
         print("Ok, you didn't see it.")
       self.respondingPlayer = int(self.respondingPlayer)
@@ -165,12 +169,14 @@ class MapRefinement(object):
     self.unheldCards(gameName)    
     self.turnByTurn(gameName) 
     #The map has completed all it's 'known' information.  Now we move on to inferred information
- 
+    self.convertToInferred(gameName)
+    
     #inferred information: 
-    #someone stops a card. (gives a boost).  More than once gives something like adding the triangular number of the times a card is stopped to the weighting?
-    #Someone makes an accusation with a card in it-- they probably don't have that card.
- 
+    self.dingAccusations(gameName)
+    self.cardStopping(gameName)
+    
     #Ranking: Best card to guess would be one where you see lots of people don't have the card.  Also one where there is a lot of negative weights.
+    #for card in gameName.cards:
 
     self.printTurnHistory(gameName)    
     print("\n\nMap at end of strategy execution")
@@ -179,7 +185,43 @@ class MapRefinement(object):
     print("\nHere are the rankings for each card Type:")
     print("RANKING HERE")
     print("-"*20)
-
+  
+  def cardStopping(self,gameName): #someone stops a card. (gives a boost).  More than once gives something like adding the triangular number of the times a card is stopped to the weighting?
+    for card in gameName.cards:
+      if(not self.myMap[card].locationDetermined):
+        tempMaplet = self.myMap[card]
+        counterMaplet = Maplet(gameName)
+        for item in counterMaplet.contents:
+          counterMaplet.contents[counterMaplet.contents.index(item)]=0
+        for turnItem in gameName.turnHistory:
+          if(turnItem.accusationMade == "y"):
+            if(turnItem.accusation.suspect == card or (turnItem.accusation.weapon == card or turnItem.accusation.room == card)):
+              #count the number of times a particular player has stopped a scene with the card in it
+              counterMaplet.contents[turnItem.respondingPlayer] +=1 #number of times each player has stopped the card.
+        for position in counterMaplet.contents:
+          print(int((position*(position+1))/2))
+          tempMaplet.contents[counterMaplet.contents.index(position)]+= int((position*(position+1))/2)
+  
+  def dingAccusations(self,gameName):
+    for turnItem in gameName.turnHistory:
+      if(turnItem.accusationMade == "y"):
+        tempMaplet = self.myMap[turnItem.accusation.suspect]
+        tempMaplet.contents[turnItem.player]-=1
+        tempMaplet = self.myMap[turnItem.accusation.weapon]
+        tempMaplet.contents[turnItem.player]-=1
+        tempMaplet = self.myMap[turnItem.accusation.room]
+        tempMaplet.contents[turnItem.player]-=1
+  
+  def convertToInferred(self, gameName):
+    print("convertToInferred called")
+    for card in gameName.cards:
+      tempMaplet = self.myMap[card]
+      for position in tempMaplet.contents:
+        #print("interior loop")
+        if(position == None):
+          #print("interior branch")
+          tempMaplet.contents[tempMaplet.contents.index(position)] = 0
+  
   def printMap(self,gameName):
     for item in gameName.cards:
       print(item, end = "")
@@ -257,22 +299,25 @@ class MapRefinement(object):
 class Maplet(object):  #Nothing except for MapRefinement will interact with Maplets
   def __init__(self,gameName):
     self.contents = []
+    self.locationDetermined = False
     i=0
     while i < gameName.players:
       self.contents.append(None)
       i+=1
   
   def setTrue(self, player):
-    """
+    
     for item in self.contents:
-      item = False
+      self.contents[self.contents.index(item)] = False
     """
     i = 0
     while i < len(self.contents):
       self.contents[i] = False
       i+=1
+    """
     self.contents[player] = True
-    
+    self.locationDetermined = True
+  
   def getMaplet(self):
     return self.contents
   
