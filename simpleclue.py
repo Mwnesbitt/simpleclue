@@ -183,17 +183,20 @@ class MapRefinement(object):
     #inferred information: 
     self.dingAccusations(gameName)
     self.cardStopping(gameName)
-    
-    #Ranking: Best card to guess would be one where you see lots of people don't have the card.  Also one where there is a lot of negative weights.
-    #for card in gameName.cards:
-
+        
     self.printTurnHistory(gameName)    
     print("\n\nMap at end of strategy execution")
     self.printMap(gameName)
     print("-"*20)
     print("\nHere are the rankings for each card Type:")
     print("RANKING HERE")
+    self.printRanking(gameName)
     print("-"*20)
+  
+  def printRanking(self, gameName): #Ranking: Best card to guess would be one where you see lots of people don't have the card.  Also one where there is a lot of negative weights.
+    for card in gameName.cards:
+      
+      pass
   
   def cardStopping(self,gameName): #someone stops a card. (gives a boost).  More than once gives something like adding the triangular number of the times a card is stopped to the weighting?
     for card in gameName.cards:
@@ -215,11 +218,14 @@ class MapRefinement(object):
     for turnItem in gameName.turnHistory:
       if(turnItem.accusationMade == "y"):
         tempMaplet = self.myMap[turnItem.accusation.suspect]
-        tempMaplet.contents[turnItem.player]-=1
+        if(not tempMaplet.locationDetermined):  
+          tempMaplet.contents[turnItem.player]-=1
         tempMaplet = self.myMap[turnItem.accusation.weapon]
-        tempMaplet.contents[turnItem.player]-=1
+        if(not tempMaplet.locationDetermined):
+          tempMaplet.contents[turnItem.player]-=1
         tempMaplet = self.myMap[turnItem.accusation.room]
-        tempMaplet.contents[turnItem.player]-=1
+        if(not tempMaplet.locationDetermined):
+          tempMaplet.contents[turnItem.player]-=1
   
   def convertToInferred(self, gameName):
     print("convertToInferred called")
@@ -317,6 +323,15 @@ class Maplet(object):  #Nothing except for MapRefinement will interact with Mapl
     for x in range(gameName.players - 1):
       self.contents.append(None)
     """
+  
+  def mapletSum(self, gameName):
+    if(self.locationDetermined == True):
+      pass #should generate an error
+    else:
+      sum = 0
+      for item in self.contents:
+        sum += item
+      return sum
   
   def setTrue(self, player):
     
