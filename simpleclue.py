@@ -1,8 +1,7 @@
-# TO DO
+# TO DO #
 
 #MPV Items:
 #  Push forward on the strategy: producing the ranking of each of the card types.
-#  Figure out how to prevent an error in entering information from breaking the entire game.  (Basically every input chunk of code that takes user input needs to be inside a while true loop where the last section repeats back to the user what was entered and is then an if statement-- if user confirms, break out of the loop.
 
 #Update readme to reflect refined scope.  
 #  Project isn't to simulate a game of clue-- it's to assist someone playing it by giving them their best guesses.  Consdering new name: clueAssistant
@@ -13,6 +12,7 @@
 #  Make a note about how the code doesn't do any checking on whether user entries make sense/are possible. (also if a weapon stopped an accusation the user shouldn't have to type it in)
 
 #Beyond MVP
+#  Asking the user to confirm is cloogy inside of a turn-- you have to confirm the scene twice-- if you reject the second one the whole turn gets restarted.  You need to go through the process-- when a turn is confirmed it should be a) improved for when there was no accusation and b) if the user does not confirm the player that responded the user should not be asked to input the scene again.  
 #  Do an audit-- go through a mock game to make sure there aren't bugs, come up with some scenarios to test the logic.
 #  Use learn-python-the-hard-way to review best practices and make sure the code follows these.  (init function not overloaded?) 
 #  Look for duplicated code (printing lists, some noted in the comments, spend some time looking through to think about how you can simplify and group/condense things into their proper logical groups.
@@ -53,7 +53,6 @@ class Game(object):
     self.turnHistory = []
     self.players = int(input("\nHow many players?\n"))
     self.startingPlayer = int(input("\nEnter the player number who starts first (player 0 through %d)\n" %(self.players-1)))
-    
     self.user = Player(self)
       
   def play(self):
@@ -84,16 +83,20 @@ class Scene(object):
     self.weapon=""
     self.room=""
     
-    self.setScene(gameName)
-    print("\nYou selected the following scene:")
-    self.printScene()
+    while True:
+      self.setScene(gameName)
+      print("\nThe following scene was entered:")
+      self.printScene()
+      repeat = input("\nPress ENTER to confirm the scene")
+      if(not repeat):
+        break
     
   def setScene(self, gameName):
     print("\nSelect, using 0 to %d, the Scene's suspect: " % (len(gameName.suspectsList)-1))
     for item in gameName.suspectsList:
       print(gameName.suspectsList.index(item), item)
     self.suspect = gameName.suspectsList[int(input("> "))]  #stored as pointer to the suspect's string, correct?
-    
+  
     print("\nSelect, using 0 to %d, the Scene's weapon: " % (len(gameName.weaponsList)-1))
     for item in gameName.weaponsList:
       print(gameName.weaponsList.index(item), item)
@@ -102,8 +105,8 @@ class Scene(object):
     print("\nSelect, using 0 to %d, the Scene's room: " % (len(gameName.roomsList)-1))
     for item in gameName.roomsList:
       print(gameName.roomsList.index(item), item)
-    self.room = gameName.roomsList[int(input("> "))]
-  
+    self.room = gameName.roomsList[int(input("> "))]      
+      
   def printScene(self):
     print(self.suspect, self.weapon, self.room, end = "")
 
@@ -126,9 +129,15 @@ class Turn(object):
     if(self.player==gameName.user.number):
       gameName.user.implementStrategy(gameName)
     
-    self.accusationMade = input("Was there an accusation made? (y/n)\n")
-    if(self.accusationMade == 'y'):
-      self.manageAccusation(gameName)
+    while True:
+      self.accusationMade = input("Was there an accusation made? (y/n)\n")  
+      if(self.accusationMade == 'y'):
+        self.manageAccusation(gameName)
+      
+      print("Player %r answered and the card was %r" %(self.respondingPlayer, self.respondingCard))      
+      repeat = input("\nPress ENTER to confirm this turn")
+      if(not repeat):
+        break
     
   def manageAccusation(self,gameName):
     self.accusation = Scene(gameName) 
@@ -304,6 +313,10 @@ class Maplet(object):  #Nothing except for MapRefinement will interact with Mapl
     while i < gameName.players:
       self.contents.append(None)
       i+=1
+    """
+    for x in range(gameName.players - 1):
+      self.contents.append(None)
+    """
   
   def setTrue(self, player):
     
@@ -327,20 +340,26 @@ class Maplet(object):  #Nothing except for MapRefinement will interact with Mapl
       
 class Player(object):
   def __init__(self, gameName):
-    self.number = int(input("\nEnter your player number (player 0 through %d)\n" %(gameName.players-1)))
     
-    self.cards = []    
-    print("\nStart entering your cards:")
-    for item in gameName.cards:
-      print(gameName.cards.index(item), item) #Seems like redundant code-- condense this type of card presentation into one code area?
-    while True:  
-      self.tempCard = input("\nEnter the number of the card.  (press ENTER when done)\n")
-      if(not self.tempCard):
+    while True:
+      self.number = int(input("\nEnter your player number (player 0 through %d)\n" %(gameName.players-1)))
+    
+      self.cards = []    
+      print("\nStart entering your cards:")
+      for item in gameName.cards:
+        print(gameName.cards.index(item), item) #Seems like redundant code-- condense this type of card presentation into one code area?
+      while True:  
+        self.tempCard = input("\nEnter the number of the card.  (press ENTER if done)\n")
+        if(not self.tempCard):
+          break
+        else:
+          self.cards.append(gameName.cards[int(self.tempCard)])
+      print("You are player %d\n" %self.number)
+      print("Your cards are: ")   
+      self.printCards(gameName)
+      repeat = input("\nPress ENTER to confirm that these are your cards:")
+      if(not repeat):
         break
-      else:
-        self.cards.append(gameName.cards[int(self.tempCard)])
-    print("Your cards are: ")
-    self.printCards(gameName)
   
   def implementStrategy(self, gameName):
     self.myStrategy = MapRefinement(gameName)
