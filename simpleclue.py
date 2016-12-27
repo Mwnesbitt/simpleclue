@@ -1,23 +1,9 @@
 # TO DO #
-
-#MPV Items:
-#  Push forward on the strategy: producing the ranking of each of the card types.
-
-#Update readme to reflect refined scope.  
-#  Project isn't to simulate a game of clue-- it's to assist someone playing it by giving them their best guesses.  Consdering new name: clueAssistant
-#  Thus, all parts of the code that were meant to be flexible or allow for automatic play of the game have been removed
-#  MVP reached -- still a bit fragile but it can be used now.  See Beyond MVP section for the list of things that should be done.
-#  Need better way of handling cards.  Dict?
-#  Make a note about how you're assuming a single strategy (MapRefinement) but how things could change if there were several available.
-#  Make a note about how the code doesn't do any checking on whether user entries make sense/are possible. (also if a weapon stopped an accusation the user shouldn't have to type it in)
-
-#Beyond MVP
-#  Asking the user to confirm is cloogy inside of a turn-- you have to confirm the scene twice-- if you reject the second one the whole turn gets restarted.  You need to go through the process-- when a turn is confirmed it should be a) improved for when there was no accusation and b) if the user does not confirm the player that responded the user should not be asked to input the scene again.  
-#  Do an audit-- go through a mock game to make sure there aren't bugs, come up with some scenarios to test the logic.
-#  Use learn-python-the-hard-way to review best practices and make sure the code follows these.  (init function not overloaded?) 
-#  Look for duplicated code (printing lists, some noted in the comments, spend some time looking through to think about how you can simplify and group/condense things into their proper logical groups.
-#  Additional strategy improvements.  Right now the strategy isn't super sophisticated-- it uses 1/2 dozen basic things to refine the map and may not be determining as much as it could.  Think hard to make sure the strategy is capturing everything-- come up with scenarios where information is learned and make sure the strategy grabs that info. Read online to get good strategies.  Think about making a while loop that performs internal checks on the map-- what can it learn from itself?  Once you've done the "matrix" work, go back through turnByTurn (maybe beef the method itself up), Loop through the turns and see what else you learn from the turn now that the map has been updated.  terminate the while loop if the map after the while loop is the same as the map before it.
-#  Allow the game to print out its state to a file and to load a state from a properly formatted file.  Then you can put game.play() inside a try-catch that prints to the file if an exception is encountered.  Then you can go edit the file (if necessary) and start a new game and point it to that file so you don't lose all your progress.  Probably storing all Game variables would be enough.
+"""
+Use learn-python-the-hard-way to review best practices and make sure the code follows these.  (init function not overloaded?) 
+Look for duplicated code (printing lists, some noted in the comments, spend some time looking through to think about how you 
+can simplify and group/condense things into their proper logical groups.
+"""
 
 import sys
 
@@ -194,9 +180,13 @@ class MapRefinement(object):
     print("-"*20)
   
   def printRanking(self, gameName): #Ranking: Best card to guess would be one where you see lots of people don't have the card.  Also one where there is a lot of negative weights.
-    for card in gameName.cards:
+    #construct ranking in reverse order
+    suspectsResult = {}
+    for card in gameName.suspectsList:
+      tempMaplet = self.myMap[card]
+      if(tempMaplet.locationDetermined is True):
+        suspectsResult[card] = 0
       
-      pass
   
   def cardStopping(self,gameName): #someone stops a card. (gives a boost).  More than once gives something like adding the triangular number of the times a card is stopped to the weighting?
     for card in gameName.cards:
@@ -324,6 +314,13 @@ class Maplet(object):  #Nothing except for MapRefinement will interact with Mapl
       self.contents.append(None)
     """
   
+  def falseCount(self,gameName):
+    count = 0
+    for item in self.contents:
+      if item is False:
+        count+=1
+    return count
+    
   def mapletSum(self, gameName):
     if(self.locationDetermined == True):
       pass #should generate an error
