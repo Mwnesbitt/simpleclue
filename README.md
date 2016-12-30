@@ -8,7 +8,7 @@ although I haven't tested it as extensively as I would like.  It also doesn't pr
 its support for the user as I initially hoped, but I didn't want to get bogged down with sophisticated strategies before
 I had a soup to nuts working code.  I've outlined the most important improvements below:
 
-1. The MapRefinement strategy can be improved.  I'm concerned that I'm leaving information on the table both in the creation of 
+1. The MapRefinement class can be improved.  I'm concerned that I'm leaving information on the table both in the creation of 
    the "known" map and especially in the creation of the "inferrred" map.  Come up with some scenarios where outside of the program
    you know that certain information can be concluded and check that the program is capturing those deductions. Read online to 
    get good strategies.  Think about making a while loop that performs internal checks on the map-- what can it learn from itself?
@@ -27,10 +27,12 @@ I had a soup to nuts working code.  I've outlined the most important improvement
    turn is confirmed it should be a) improved for when there was no accusation and b) if the user does not confirm the player that 
    responded the user should not be asked to input the scene again.  
 4. Code review.  I don't think the code has any runtime bugs but I'm not as sure as I should be.  I'd like to feel like the code
-   isn't fragile, but I don't feel that way just yet.
+   isn't fragile, but I don't feel that way just yet.  I also need to look for duplicated code (printing lists, some noted in 
+   the comments, spend some time looking through to think about how you can simplify and group/condense things into their proper 
+   logical groups.
 5. Best practices:  I'm sure I had a bunch of poor practices.  I'd like to get a better sense of how a professional developer
    would have written this.  For example, I don't think the way cards are handled is a best practice.  It was cumbersome and 
-   inelegant when writing the code.  
+   inelegant when writing the code.   This is a similar to-do item to #4. 
 6. OPTIONAL: Have the game to print out its state to a file and  load a state from a properly formatted file.  This would allow 
    putting the entire code in a try-catch that prints to the file if an exception is encountered so you can more easily detect
    issues.  You could also correct the bad data inside the file and reload the game from that file to resume play.  (Storing all
@@ -42,10 +44,11 @@ I had a soup to nuts working code.  I've outlined the most important improvement
 
 
 BACKGROUND
-I did this project to practice with classes in python.  I had it on the back burner while I went through the learn python
-the hard way online exercise set, until I encountered ex45, which required the student to make a game.
+I did this project to practice with classes in python.  I originally didn't know about classes and ran into serious trouble,
+so I put it on the back burner while I went through the learn python the hard way online exercise set, until I encountered ex45,
+which required the student to make a game with classes.  I realized it was the perfect way to return to the project and do it properly.
 
-My original goal was similar to tat of the mastermind project-- to simulate a game, in this case, clue.  However, I later refined
+My original goal was similar to that of the mastermind project-- to simulate a game, in this case, clue.  However, I later refined
 the scope to be what would better be termed a "clue assistant" that a player in a game of clue can use to help track the
 game and make optimal guesses.  I decided not to rename the project so that I wouldn't have two directories running around 
 on github, confusing my page.

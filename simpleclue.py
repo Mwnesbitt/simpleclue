@@ -1,10 +1,3 @@
-# TO DO #
-"""
-Use learn-python-the-hard-way to review best practices and make sure the code follows these.  (init function not overloaded?) 
-Look for duplicated code (printing lists, some noted in the comments, spend some time looking through to think about how you 
-can simplify and group/condense things into their proper logical groups.
-"""
-
 import sys
 
 class Game(object):
